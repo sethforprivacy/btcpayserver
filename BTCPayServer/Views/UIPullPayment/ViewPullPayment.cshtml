@@ -1,10 +1,13 @@
 @using NUglify.Helpers
 @using BTCPayServer.Abstractions.Contracts
 @using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.Payments
+@using Microsoft.AspNetCore.Server.IIS.Core
 @model BTCPayServer.Models.ViewPullPaymentModel
 
 @addTagHelper *, BundlerMinifier.TagHelpers
 @inject BTCPayServer.Services.BTCPayServerEnvironment env
+@inject BTCPayNetworkProvider BtcPayNetworkProvider
 @inject ISettingsRepository _settingsRepository
 @{
     ViewData["Title"] = Model.Title;
@@ -80,6 +83,24 @@
                                 <button class="btn btn-lg btn-primary w-100 text-nowrap" type="submit">Claim Funds</button>
                             </div>
                         </div>
+                        @{
+                            var pms = Model.PaymentMethods.FirstOrDefault(id => id.PaymentType == LightningPaymentType.Instance &&  BtcPayNetworkProvider.DefaultNetwork.CryptoCode == id.CryptoCode);
+                            if (pms is not null && Model.AutoApprove)
+                            {
+                                var lnurlEndpoint = new Uri(Url.Action("GetLNURLForPullPayment", "UILNURL", new
+                                {
+                                    cryptoCode = pms.CryptoCode,
+                                    pullPaymentId = Model.Id
+                                }, Context.Request.Scheme, Context.Request.Host.ToString()));
+                                var lnUrl = LNURL.LNURL.EncodeUri(lnurlEndpoint, "withdrawRequest", true);
+                                <div class="row align-items-center">
+                                    <div class="col-12 ">
+                                        <a href="@lnUrl" rel="noreferrer noopener"><vc:qr-code data="@lnUrl.ToString().ToUpperInvariant()"/></a>
+
+                                    </div>
+                                </div>
+                            }
+                        }
                     </form>
                 </div>
             </nav>

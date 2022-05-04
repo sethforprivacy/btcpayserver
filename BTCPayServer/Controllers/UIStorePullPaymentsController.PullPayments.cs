@@ -221,14 +221,19 @@ namespace BTCPayServer.Controllers
                 .Skip(vm.Skip)
                 .Take(vm.Count)
                 .ToListAsync();
-            vm.PullPayments.AddRange(pps.Select(pp => new PullPaymentsModel.PullPaymentModel()
+            vm.PullPayments.AddRange(pps.Select(pp =>
             {
-                StartDate = pp.StartDate,
-                EndDate = pp.EndDate,
-                Id = pp.Id,
-                Name = pp.GetBlob().Name,
-                Progress = _pullPaymentService.CalculatePullPaymentProgress(pp, now),
-                Archived = pp.Archived
+                var blob = pp.GetBlob();
+                return new PullPaymentsModel.PullPaymentModel()
+                {
+                    StartDate = pp.StartDate,
+                    EndDate = pp.EndDate,
+                    Id = pp.Id,
+                    Name = blob.Name,
+                    AutoApproveClaims = blob.AutoApproveClaims,
+                    Progress = _pullPaymentService.CalculatePullPaymentProgress(pp, now),
+                    Archived = pp.Archived
+                };
             }));
 
             return View(vm);
